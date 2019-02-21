@@ -2,6 +2,9 @@ module Spree
   StockLocation.class_eval do
     belongs_to :address
 
+    has_many :user_stores
+    has_many :users, through: :user_stores
+
     before_validation :associate_address
 
     scope :stores, -> { where(store: true) }
@@ -18,13 +21,14 @@ module Spree
     end
 
     private
-      def associate_address
-        if respond_to?(:state_id) && store?
-          self.address = Spree::Address.find_or_initialize_by(firstname: name,
-            lastname: '(Store)', state_id: state_id, country_id: country_id,
-            address1: address1, address2: address2, phone: phone, zipcode: zipcode,
-            city: city)
-        end
+
+    def associate_address
+      if respond_to?(:state_id) && store?
+        self.address = Spree::Address.find_or_initialize_by(firstname: name,
+                                                            lastname: '(Store)', state_id: state_id, country_id: country_id,
+                                                            address1: address1, address2: address2, phone: phone, zipcode: zipcode,
+                                                            city: city)
       end
+    end
   end
 end

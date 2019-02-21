@@ -1,17 +1,18 @@
 Spree::Order.class_eval do
+  belongs_to :salesman, class_name: 'Spree::User', foreign_key: 'salesman_id'
 
   scope :pos, -> { where(is_pos: true) }
   scope :unpaid, -> { where.not(payment_state: :paid) }
   scope :unpaid_pos_order, -> { pos.unpaid }
 
-  self.whitelisted_ransackable_associations << 'product'
-  self.whitelisted_ransackable_attributes << 'is_pos'
+  whitelisted_ransackable_associations << 'product'
+  whitelisted_ransackable_attributes << 'is_pos'
 
-  def clean!
+  def clean!(user)
     payments.delete_all
-    line_items.each { |line_item| contents.remove(line_item.variant, line_item.quantity, { shipment: pos_shipment }) }
-    #shipment is removed on removing all items, so initializing a new shipment
-    assign_shipment_for_pos
+    line_items.each { |line_item| contents.remove(line_item.variant, line_item.quantity, shipment: pos_shipment) }
+    # shipment is removed on removing all items, so initializing a new shipment
+    assign_shipment_for_pos(user)
   end
 
   def complete_via_pos
@@ -19,12 +20,12 @@ Spree::Order.class_eval do
     create_tax_charge!
     save!
     find_uncaptured_pending_payments.capture!
-    shipments.each { |shipment|  shipment.finalize_pos }
+    shipments.each(&:finalize_pos)
     deliver_order_confirmation_email
   end
 
-  def assign_shipment_for_pos
-    shipments.create_shipment_for_pos_order if is_pos?
+  def assign_shipment_for_pos(user)
+    shipments.create_shipment_for_pos_order(user) if is_pos?
   end
 
   def save_payment_for_pos(payment_method_id, card_name = nil)
@@ -44,8 +45,7 @@ Spree::Order.class_eval do
 
   private
 
-    def find_uncaptured_pending_payments
-      payments.find { |payment| payment.checkout? || payment.pending? }
-    end
-
+  def find_uncaptured_pending_payments
+    payments.find { |payment| payment.checkout? || payment.pending? }
+  end
 end

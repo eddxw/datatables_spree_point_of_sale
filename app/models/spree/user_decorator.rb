@@ -1,4 +1,8 @@
 Spree::User.class_eval do
+  has_many :user_stores
+  has_many :stock_locations, through: :user_stores
+  has_many :sales, class_name: 'Spree::Order', foreign_key: 'salesman_id'
+
   def unpaid_pos_orders
     orders.unpaid_pos_order
   end
