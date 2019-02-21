@@ -8,6 +8,7 @@
           <th><%= Spree.t("image") %></th>
           <th><%= sort_link @search,:product_name, Spree.t("name"), {}, {:title => 'admin_products_listing_name_title'} %></th>
           <th><%= sort_link @search,:price, Spree.t("master_price") %></th>
+          <th>Disponibles<th>
           <th><%= Spree.t("select") %></th>
       </tr>
       <% @variants.each do |variant| %>
@@ -23,6 +24,8 @@
           <td> <%= link_to( "#{variant.name} #{variant.options_text}" , edit_admin_product_url(variant.product)) %>
           <br> <%== variant.description[0 .. 200] if variant.description%></td>
           <td><%= variant.price %></td>
+          <% coh = variant.stock_items.find_by(stock_location_id: @order.pos_shipment.stock_location.id).count_on_hand %>
+          <td> <%= "#{coh} (#{variant.total_on_hand-coh})" %></td>
           <td class="actions">
               <%= link_to add_admin_pos_path(number: @order.number, item: variant.id) do %>
                 <span class='glyphicon glyphicon-plus'></span>
@@ -37,11 +40,11 @@
 </table>
 <%= paginate @variants %>
 <% else %>
-No Result Found
+Sin resultados
 <% end %>
 <% content_for :sidebar do %>
   <div>
-    <%= button_to "Back To Order", admin_pos_show_order_path(:number => @order.number), method: :get %>
+    <%= button_to "Regresar", admin_pos_show_order_path(:number => @order.number), method: :get %>
   </div>
   <%= search_form_for   @search , :url => "/admin/pos/find/#{@order.number}/" do |f| %>
     <div class="box">
@@ -65,6 +68,10 @@ No Result Found
       <p>
         <%= f.label :sku_cont, Spree.t("sku") %><br />
         <%= f.text_field :sku_cont, :size => 15 %>
+      </p>
+      <p>
+        <%= f.label :ean_cont, Spree.t("ean") %><br />
+        <%= f.text_field :ean_cont, :size => 15 %>
       </p>
       <p>
         <%= f.label :prices_amount_gteq, Spree.t("price_min") %><br />

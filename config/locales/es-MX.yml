@@ -1,0 +1,44 @@
+es-MX:
+  order_number: Número de orden
+  item_description: Descripción del Artículo
+  qty: Cantidad
+  total: Total
+  order_total: Total
+  item_total: "Sub-Total"
+  discount: "Descuento"
+  spree:
+    discount: "Descuento"
+    item_total: "Sub-Total"
+    store: "Punto de venta"
+    pos: POS
+    product_added: Producto agregado
+    product_removed: Producto removido
+    quantity_changed: "Cantidad actualizada"
+    discount_applied: "Descuento aplicado"
+    price_changed: "Precio actualizado"
+    price_change: Cambio de precio
+    order_total: 'Total'
+    item_description: 'Descripción'
+    select: Select
+    master_price: Precio maestro
+    no_active_store: No hay tienda asociada
+    quantity_unavailable: Cantidad no disponible
+    empty_inventory: Inventory Units assigned for the order. Please remove them to change stock location
+    no_card_name: No card name to be saved with this payment
+    quantity_updated: "Cantidad actualizada"
+    remove_items: Todos los Artículos fueron removidos
+    add_user_failure: "No se pudo agregar el usuario: %{errors}"
+    add_user_success: Usuario asocioado
+    shipment: Actualizado
+    pos_order:
+      invalid_discount: Ingresa un descuento valido
+      not_pos: Esta no es una orden de punto de venta
+      already_completed: Esta orden ya fue completada. Favor de crear otra orden.
+      existing_order: Tienes una orden sin pagar o vacia. Completa la orden o actualiza sus Artículos
+      shipping_not_found: Favor de asignar un metodo de envio tipo POS.
+      active_store_not_found: Favor de asignar un punto de venta al usuario.
+      variant_not_found: Variante no encontrada
+      payment_not_found: Selecciona un metodo de pago
+    user:
+      not_found_email: 'No se encontro el usuario %{email}'
+      existing_user: 'Este email ya esta registrado %{email}'

@@ -1,14 +1,14 @@
 class Spree::Admin::PosController < Spree::Admin::BaseController
   before_action :load_order, :ensure_pos_order, :ensure_unpaid_order, except: :new
   helper_method :user_stock_locations
-  before_action :load_variant, only: [:add, :remove]
+  before_action :load_variant, only: %i[add remove]
   before_action :ensure_active_store
   before_action :ensure_pos_shipping_method
   before_action :ensure_payment_method, only: :update_payment
   before_action :ensure_existing_user, only: :associate_user
   before_action :check_unpaid_pos_order, only: :new
   before_action :check_discount_request, only: :apply_discount
-  before_action :load_line_item, only: [:update_line_item_quantity, :apply_discount]
+  before_action :load_line_item, only: %i[update_line_item_quantity apply_discount]
   before_action :clean_and_reload_order, only: :update_stock_location
 
   def new
@@ -17,44 +17,90 @@ class Spree::Admin::PosController < Spree::Admin::BaseController
   end
 
   def find
-    init_search
-    stock_location = @order.pos_shipment.stock_location
-    @search = Spree::Variant.includes([:product]).available_at_stock_location(stock_location.id).ransack(params[:q])
-    @variants = @search.result(distinct: true).page(params[:page]).per(PRODUCTS_PER_SEARCH_PAGE)
+    respond_to do |format|
+      format.html do
+        init_search
+        stock_location = @order.pos_shipment.stock_location
+        @search = Spree::Variant.includes([:product]).available_at_stock_location(stock_location.id).ransack(params[:q])
+        @variants = @search.result(distinct: true).page(params[:page]).per(PRODUCTS_PER_SEARCH_PAGE)
+      end
+      format.json do
+        render json: VariantDatatable.new(params, user: spree_current_user,
+                                                  stock_location: @order.pos_shipment.stock_location, order: @order)
+      end
+    end
   end
 
   def add
     @item = add_variant(@variant) if @variant.present?
     flash[:notice] = Spree.t(:product_added) if @item.errors.blank?
     flash[:error] = @item.errors.full_messages.to_sentence if @item.errors.present?
-    redirect_to admin_pos_show_order_path(number: @order.number)
+    respond_to do |format|
+      format.html { redirect_to admin_pos_show_order_path(number: @order.number) }
+      format.js {}
+    end
   end
 
   def remove
-    line_item = @order.contents.remove(@variant, 1, @order.pos_shipment)
-    @order.assign_shipment_for_pos if @order.reload.pos_shipment.blank?
+    qty = @order.line_items.find_by(variant_id: @variant.id).quantity
+    line_item = @order.contents.remove(@variant, qty, @order.pos_shipment)
+    @order.assign_shipment_for_pos(spree_current_user) if @order.reload.pos_shipment.blank?
     flash.notice = line_item.quantity.zero? ? Spree.t(:product_removed) : Spree.t(:quantity_updated)
-    redirect_to admin_pos_show_order_path(number: @order.number)
+    respond_to do |format|
+      format.html { redirect_to admin_pos_show_order_path(number: @order.number) }
+      format.js {}
+    end
   end
 
   def update_line_item_quantity
+    @item.is_pos = false
     @item.quantity = params[:quantity]
     @item.save
+    @order.update_totals
+    @order.save
 
-    flash[:notice] = Spree.t(:quantity_updated) if @item.errors.blank?
-    flash[:error] = @item.errors.full_messages.to_sentence if @item.errors.present?
-    redirect_to admin_pos_show_order_path(number: @order.number)
+    flash.now[:notice] = Spree.t(:quantity_updated) if @item.errors.blank?
+    flash.now[:error] = @item.errors.full_messages.to_sentence if @item.errors.present?
+    respond_to do |format|
+      format.html { redirect_to admin_pos_show_order_path(number: @order.number) }
+      format.js {}
+    end
   end
 
   def apply_discount
+    @item.is_pos = true
     @item.price = @item.variant.price * (1.0 - @discount / 100.0)
     @item.save
-    flash[:error] = @item.errors.full_messages.to_sentence if @item.errors.present?
-    redirect_to admin_pos_show_order_path(number: @order.number)
+    @order.update_totals
+    @order.save
+    flash.now[:error] = @item.errors.full_messages.to_sentence if @item.errors.present?
+    respond_to do |format|
+      format.html { redirect_to admin_pos_show_order_path(number: @order.number) }
+      format.js {}
+    end
+  end
+
+  def change_price
+    @item.is_pos = true
+    @item.price = params[:new_price]
+    @item.save
+    @order.update_totals
+    @order.save
+
+    flash.notice[:notice] = Spree.t(:price_changed) if @item.errors.blank?
+    flash.now[:error] = @item.errors.full_messages.to_sentence if @item.errors.present?
+
+    respond_to do |format|
+      format.html { redirect_to admin_pos_show_order_path(number: @order.number) }
+      format.js {}
+    end
   end
 
   def clean_order
-    @order.clean!
+    @order.try(:empty)
+    @order.shipments.destroy_all
+    @order.shipments.create_shipment_for_pos_order
+    @order.save!
     redirect_to admin_pos_show_order_path(number: @order.number), notice: Spree.t(:remove_items)
   end
 
@@ -63,6 +109,7 @@ class Spree::Admin::PosController < Spree::Admin::BaseController
     if @user.errors.present?
       add_error Spree.t(:add_user_failure, errors: @user.errors.full_messages.to_sentence)
     else
+      @order.associate_user!(@user)
       @order.save!
       flash[:notice] = Spree.t(:add_user_success)
     end
@@ -82,20 +129,25 @@ class Spree::Admin::PosController < Spree::Admin::BaseController
   end
 
   def update_stock_location
+    @order.shipments.first.destroy
+    @order.save!
     @shipment = @order.pos_shipment
     @shipment.stock_location = user_stock_locations(spree_current_user).find_by(id: params[:stock_location_id])
     if @shipment.save
-      flash[:notice] = Spree.t('shipment')
+      flash[:notice] = "Ubicación: #{@shipment.stock_location.name}"
     else
       flash[:error] = @shipment.errors.full_messages.to_sentence
     end
-    redirect_to admin_pos_show_order_path(number: @order.number)
+    respond_to do |format|
+      format.html { redirect_to admin_pos_show_order_path(number: @order.number) }
+      format.js {}
+    end
   end
 
   private
 
   def clean_and_reload_order
-    @order.clean!
+    @order.clean!(spree_current_user)
     load_order
   end
 
@@ -136,16 +188,16 @@ class Spree::Admin::PosController < Spree::Admin::BaseController
   end
 
   def ensure_pos_shipping_method
-    redirect_to root_path, flash: { error: Spree.t('pos_order.shipping_not_found')} unless Spree::ShippingMethod.find_by(name: SpreePos::Config[:pos_shipping])
+    redirect_to root_path, flash: { error: Spree.t('pos_order.shipping_not_found') } unless Spree::ShippingMethod.find_by(name: SpreePos::Config[:pos_shipping])
   end
 
   def ensure_active_store
-    redirect_to root_path, flash: { error: Spree.t('pos_order.active_store_not_found')} if Spree::StockLocation.stores.active.blank?
+    redirect_to root_path, flash: { error: Spree.t('pos_order.active_store_not_found') } if Spree::StockLocation.stores.active.blank?
   end
 
   def load_order
-    @order = Spree::Order.where(number: params[:number]).includes([{ line_items: [{ variant: [:default_price, { product: [:master] } ] }] } , { adjustments: :adjustable }] ).first
-    redirect_to root_path, flash: { error: "No order found for -#{ params[:number] }-" } unless @order
+    @order = Spree::Order.where(number: params[:number]).includes([{ line_items: [{ variant: [:default_price, { product: [:master] }] }] }, { adjustments: :adjustable }]).first
+    redirect_to root_path, flash: { error: "No order found for -#{params[:number]}-" } unless @order
   end
 
   def load_variant
@@ -164,40 +216,43 @@ class Spree::Admin::PosController < Spree::Admin::BaseController
   end
 
   def init_pos
-    @order = Spree::Order.new(state: "complete", is_pos: true, completed_at: Time.current, payment_state: 'balance_due')
+    @order = Spree::Order.new(state: 'complete', is_pos: true, completed_at: Time.current, payment_state: 'balance_due')
     @order.associate_user!(spree_current_user)
+    spree_current_user.sales << @order
     @order.save!
-    @order.assign_shipment_for_pos
+    @order.assign_shipment_for_pos(spree_current_user)
+    @order.shipments.first.stock_location = spree_current_user.stock_locations.first
     @order.save!
     session[:pos_order] = @order.number
   end
 
-  def add_error error_message
-    flash[:error] = "" unless flash[:error]
+  def add_error(error_message)
+    flash[:error] ||= []
     flash[:error] << error_message
   end
 
-  def add_variant var, quant = 1
-    line_item = @order.contents.add(var, quant, { shipment: @order.pos_shipment })
+  def add_variant(var, quant = 1)
+    line_item = @order.contents.add(var, quant, shipment: @order.pos_shipment)
     var.product.save
     line_item
   end
 
-  def user_stock_locations(user)
+  def user_stock_locations(_user)
     # use this code when stock managers implemented
     # @stock_location ||= (user.has_spree_role?('pos_admin') ? Spree::StockLocation.active.stores : user.stock_locations.active.store)
-    Spree::StockLocation.active.stores
+    # Spree::StockLocation.active.stores
+    user.stock_locations
   end
 
   def init_search
     params[:q] ||= {}
-    params[:q].merge!(meta_sort: "product_name asc", deleted_at_null: "1", product_deleted_at_null: "1", published_at_not_null: "1")
+    params[:q].merge!(meta_sort: 'product_name asc', deleted_at_null: '1', product_deleted_at_null: '1', published_at_not_null: '1')
     params[:q][:product_name_cont].try(:strip!)
   end
 
   def print
     @order.complete_via_pos
-    url = SpreePos::Config[:pos_printing].sub("number" , @order.number.to_s)
-    redirect_to url
+    @recibourl = SpreePos::Config[:pos_printing].sub('number', @order.number.to_s)
+    redirect_to admin_pos_show_order_path(number: @order.number)
   end
 end

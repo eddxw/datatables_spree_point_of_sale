@@ -7,7 +7,7 @@ module SpreePos
 
     initializer "spree.spree_pos.preferences", :after => "spree.environment" do |app|
       SpreePos::Config = SpreePos::Configuration.new
-      ::CARD_TYPE = ['Visa', 'MasterCard', 'Verve', 'AmericanExpress', 'China UnionPay']
+      # ::CARD_TYPE = ['Visa', 'MasterCard', 'Verve', 'AmericanExpress', 'China UnionPay']
       app.config.spree.payment_methods << Spree::PaymentMethod::PointOfSale
     end
 
@@ -20,7 +20,7 @@ module SpreePos
         Rails.configuration.cache_classes ? require(c) : load(c)
       end
       Spree::Product.class_eval do
-        delegate_belongs_to :master, :ean
+        delegate :ean, to: :master
       end
     end
 

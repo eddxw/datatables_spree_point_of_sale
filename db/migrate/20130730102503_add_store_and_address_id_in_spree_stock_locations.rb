@@ -1,4 +1,4 @@
-class AddStoreAndAddressIdInSpreeStockLocations < ActiveRecord::Migration
+class AddStoreAndAddressIdInSpreeStockLocations < ActiveRecord::Migration[5.1]
   def change
     add_column :spree_stock_locations, :store, :boolean, :default => false
     add_column :spree_stock_locations, :address_id, :integer
