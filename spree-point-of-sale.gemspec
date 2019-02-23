@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.platform = Gem::Platform::RUBY
   s.name = 'spree-point-of-sale'
-  s.version = '3.6.3'
+  s.version = '3.6.4'
   s.email     = 'info@vinsol.com'
   s.homepage  = 'http://vinsol.com'
   s.author = ['Torsten R, Nishant Tuteja, Manish Kangia']
