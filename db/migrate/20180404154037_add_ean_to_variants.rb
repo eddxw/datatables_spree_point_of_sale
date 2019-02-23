@@ -1,4 +1,4 @@
-class AddEanToSpreeVariants < ActiveRecord::Migration[5.2]
+class AddEanToVariants < ActiveRecord::Migration[5.1]
   def change
     add_column :spree_variants, :ean, :string
   end

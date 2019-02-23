@@ -3,6 +3,8 @@ Spree::User.class_eval do
   has_many :stock_locations, through: :user_stores
   has_many :sales, class_name: 'Spree::Order', foreign_key: 'salesman_id'
 
+  validates :complete_name, length: { minimum: 2 }, allow_blank: true
+
   def unpaid_pos_orders
     orders.unpaid_pos_order
   end
