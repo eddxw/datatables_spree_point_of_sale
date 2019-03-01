@@ -16,9 +16,9 @@
         <tr <%= 'style="color:red;"' if variant.deleted? %> id="<%= dom_id variant %>">
           <td><%= variant.sku %></td>
           <td><% if variant.images.first  %>
-              <%= image_tag variant.images.first.attachment.url(:mini) %>
+              <%= image_tag main_app.url_for(variant.images.first.url(:mini)) %>
               <%elsif variant.product.images.first %>
-              <%= image_tag variant.product.images.first.attachment.url(:mini) %>
+              <%= image_tag main_app.url_for(variant.product.images.first.url(:mini)) %>
               <% end %>
           </td>
           <td> <%= link_to( "#{variant.name} #{variant.options_text}" , edit_admin_product_url(variant.product)) %>
