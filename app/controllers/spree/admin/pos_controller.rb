@@ -237,7 +237,7 @@ class Spree::Admin::PosController < Spree::Admin::BaseController
     line_item
   end
 
-  def user_stock_locations(_user)
+  def user_stock_locations(user)
     # use this code when stock managers implemented
     # @stock_location ||= (user.has_spree_role?('pos_admin') ? Spree::StockLocation.active.stores : user.stock_locations.active.store)
     # Spree::StockLocation.active.stores
