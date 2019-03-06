@@ -1,5 +1,6 @@
-<link rel="stylesheet" href="//cdn.datatables.net/1.10.9/css/jquery.dataTables.min.css" >
-<script src="//cdn.datatables.net/1.10.9/js/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/se/dt-1.10.18/datatables.min.css"/>
+ 
+<script type="text/javascript" src="https://cdn.datatables.net/v/se/dt-1.10.18/datatables.min.js"></script>
 
 <style>
 #pos-order-table tr
@@ -35,8 +36,26 @@
     </a>
   </div>
 </div>
+<%= form_tag update_stock_location_admin_pos_path(@order.number), class: 'modify_stock_location_form' do %>
+  <%= select_tag :stock_location_id, 
+      options_from_collection_for_select(user_stock_locations(spree_current_user), :id, :name, @order.pos_shipment.stock_location.id),
+      class: 'ui dropdown'
+  %>
+  
+  <%= submit_tag 'Actualizar', data: { confirm: "¿estás seguro?" }, class: 'btn btn-primary btn-success' %>
+<% end %>
 
-<div class='col-sm-9'>
+  <% if @order.payment_state == 'paid' || try_spree_current_user.has_spree_role?('admin') %>
+    <span id="spanlinkrecibo">
+      <%= link_to("/admin/invoice/#{@order.number}/receipt", target:  "_blank", id: "linkrecibo") do %>
+      <h4>
+        <span class='glyphicon glyphicon-print'></span>
+        Imprimir recibo
+      </h4>
+      <% end %>
+    </span>
+  <% end %>
+
 
   <%= form_tag associate_user_admin_pos_path(number: @order.number), id: "associate_user" do %>
   <div id="pos-tabs">
@@ -79,7 +98,7 @@
   </div>
 <% end %>
 
-<table id='variants-datatable' data-source="<%= find_admin_pos_path(@order.number, format: :json) %>">
+<table id='variants-datatable' class='ui celled compact blue unstackable table' data-source="<%= find_admin_pos_path(@order.number, format: :json) %>">
   <thead>
     <tr>
       <th>SKU</th>
@@ -93,10 +112,9 @@
   </tbody>
 </table>
 
-
-<div class="table-responsive">
-  <table id='pos-order-table' class="index table table-condensed">
-    <tr>
+<table id='pos-order-table' class="ui celled compact yellow unstackable table">
+  <thead>
+    <tr>  
       <th><%= Spree.t('item_description') %></th>
       <th><%= Spree.t('quantity') %></th>
       <th>Disp.</th>
@@ -106,9 +124,12 @@
       <th><%= Spree.t('remove') %><br><%= Spree.t('add') %></th>
       <th>Cambiar descuento</th>
     </tr>
+  </thead>
+  <tbody>
     <%= render(@order.line_items) %>
-  </table>
-</div>
+  </tbody>
+</table>
+
 
 <% if @order.line_items.exists? %>
   <div class="alert alert-info" id="order-total" data-hook="order_details_total" style="text-align: right;">
@@ -125,14 +146,8 @@
   <%= button_link_to(Spree.t(:new_adjustment), new_admin_order_adjustment_url(@order), class: "btn-success", style: "float: right; margin-bottom: 5px;", icon: 'add') if can? :create, Spree::Adjustment %>
 </div>
 
-<div class="panel panel-default">
-  <div class="panel-heading">
-    <h3 class="panel-title"><%= Spree.t(:summary) %></h3>
-  </div>
-  <div class="table-responsive">
-    <%= render "order_summary" %>
-  </div>
-</div>
+<%= render "order_summary" %>
+
 
 <div class="belowtable row">
 <%= button_to "Remover todos los artículos", admin_pos_clean_order_path(number: @order.number) , data: { confirm: "¿estás seguro?" }, class: 'btn btn-default' %>
@@ -155,7 +170,12 @@
     </div>
 
     <div id="card_name" class="rows">
-      <%= select_tag(:card_name, options_for_select(::CARD_TYPE, "#{@order.payments.first.try(:card_name)}"), include_blank: true, id: 'card_name_options') %>
+      <%= select_tag(:card_name, 
+            options_for_select(::CARD_TYPE, 
+              "#{@order.payments.first.try(:card_name)}"), 
+          include_blank: true,
+          id: 'card_name_options',
+          class: 'ui dropdown') %>
       <%= button_tag "Confirmar", class: "fr btn btn-primary btn-success", data: { confirm:"¿estás seguro?", disable_with: "..." } %>
     </div>
   </div>
@@ -163,99 +183,7 @@
 </div>
 </div>
 
-<div class='col-sm-3'>
-  <% if @order.payment_state == 'paid' || try_spree_current_user.has_spree_role?('admin') %>
-    <span id="spanlinkrecibo">
-      <%= link_to("/admin/invoice/#{@order.number}/receipt", target:  "_blank", id: "linkrecibo") do %>
-      <h4>
-        <span class='glyphicon glyphicon-print'></span>
-        Imprimir recibo
-      </h4>
-      <% end %>
-    </span>
-  <% end %>
-
-
-<div class="stock_locations">
-  <fieldset>
-    <legend class='stock-location'>Cambiar ubicación</legend>
-    <%= form_tag update_stock_location_admin_pos_path(@order.number), class: 'modify_stock_location_form' do %>
-      <% user_stock_locations(spree_current_user).all.each do |stock_location| %>
-        <div>
-          <label style="display: flow-root;">
-            <%= radio_button_tag :stock_location_id, stock_location.id, (stock_location.id == @order.pos_shipment.stock_location.id), id: "stock_location_#{ stock_location.id }", onchange: 'this.form.submit()', class: 'stock_location_checkbox' %>
-            <%= stock_location.name %>
-          </label>
-        </div>
-      <% end %>
-      <br/>
-      <%= submit_tag 'Actualizar', data: { confirm: "¿estás seguro?" }, class: 'btn btn-primary btn-success', style: 'display: none;' %>
-    <% end %>
-  </fieldset>
-</div>
-
-
-  <div class="search mart-10">
-  <legend>Buscar & Agregar</legend>
-    <%= form_tag(find_admin_pos_path(@order.number), method: :get, id: "product_search") do %>
-      <input type="hidden" value="1" name="index">
-      <div class="box">
-        <p>
-          <%= search_field_tag :sku, nil, class: 'aa-input-search', autocomplete: 'off', placeholder: "Buscar..." %>
-          <%= button_tag class: 'btn btn-primary mart-10', type: 'submit' do %>
-          <span class='icon icon-search'></span>
-          <%= Spree.t("search") %>
-          <% end %>
-        </p>
-      </div>
-    <% end %>
-  </div>
-  <a href="/admin/pos/export" target="_blank"><%  image_tag("admin/pos/select.jpg" ) %></a>
-</div>
-
-
-
 <script>
-
-  var client = algoliasearch('<%= ENV['ALGOLIA_APP_ID'] %>', '<%= ENV['ALGOLIA_API_KEY']%>');
-  var products_index = client.initIndex('athspree');
-
-  function runMyFunction(sku) {
-    alert(sku);
-  }
-  $('#sku').autocomplete(
-    {
-      debug: true,
-      templates: {
-        dropdownMenu:
-          '<div class="aa-dataset-producto"></div>'
-      },
-    },
-    [
-      {
-        source: $.fn.autocomplete.sources.hits(products_index, {hitsPerPage: 7}),
-        displayKey: 'sku',
-        name: 'producto',
-        templates: {
-          header: '<div class="aa-suggestions-category">Productos</div>',
-          suggestion: function(suggestion) {
-            // var string = "runMyFunction(suggestion._highlightResult.sku.value);";
-            return (
-              '<a><img src="' +
-                         suggestion.foto +
-                         '">' +
-                         '<span>' +
-                         suggestion._highlightResult.name.value +
-                         '</span><span>' +
-                         suggestion._highlightResult.sku.value +
-                         '</span><a/>'
-            );
-          }
-          //empty: '<div class="aa-empty">No matching products</div>',
-        }
-      }
-    ]
-  );
 
   function readyFn( jQuery ) {
     var completada;

@@ -1,42 +1,47 @@
-<table class="table table-condensed table-bordered" id="order_tab_summary" data-hook="data-hook">
+<table class="ui compact blue unstackable table" id="order_tab_summary" data-hook="data-hook">
+  <thead>
+  <tr>
+    <th colspan="2"><%= Spree.t(:summary) %></th>
+  </tr>
+  </thead>
   <tbody class="additional-info">
-  <tr>
-  <td data-hook='admin_order_tab_subtotal_title'>
-  <strong><%= Spree.t(:subtotal) %>:</strong>
-  </td>
-  <td id='item_total'>
-  <%= @order.display_item_total.to_html %>
-  </td>
-  </tr>
-
-  <% if @order.included_tax_total != 0 %>
-  <tr>
-  <td data-hook='admin_order_tab_included_tax_title'>
-    <strong><%= Spree.t(:tax_included) %>:</strong>
-  </td>
-  <td id='included_tax_total'>
-    <%= @order.display_included_tax_total.to_html %>
-  </td>
-  </tr>
-  <% end %>
+    <tr>
+      <td data-hook='admin_order_tab_subtotal_title' class="right aligned">
+        <strong><%= Spree.t(:subtotal) %>:</strong>
+      </td>
+      <td id='item_total' class="right aligned">
+        <%= @order.display_item_total.to_html %>
+      </td>
+    </tr>
+    <% if @order.included_tax_total != 0 %>
+      <tr>
+        <td data-hook='admin_order_tab_included_tax_title'>
+          <strong><%= Spree.t(:tax_included) %>:</strong>
+        </td>
+        <td id='included_tax_total' class="right aligned">
+          <%= @order.display_included_tax_total.to_html %>
+        </td>
+      </tr>
+    <% end %>
 
   <% if @order.additional_tax_total != 0 %>
-  <tr>
-  <td data-hook='admin_order_tab_additional_tax_title'>
-    <strong><%= Spree.t(:tax) %>:</strong>
-  </td>
-  <td id='additional_tax_total'>
-    <%= @order.display_additional_tax_total.to_html %>
-  </td>
-  </tr>
+    <tr>
+      <td data-hook='admin_order_tab_additional_tax_title'>
+        <strong><%= Spree.t(:tax) %>:</strong>
+      </td>
+      <td id='additional_tax_total' class="right aligned">
+        <%= @order.display_additional_tax_total.to_html %>
+      </td>
+    </tr>
   <% end %>
 
   <tr>
-  <td data-hook='admin_order_tab_total_title'>
-  <strong><%= Spree.t(:total) %>:</strong>
-  </td>
-  <td id='order_total' style="font-weight: bolder;"><%= @order.display_total.to_html %></td>
+    <td data-hook='admin_order_tab_total_title' class="right aligned">
+      <strong><%= Spree.t(:total) %>:</strong>
+    </td>
+    <td id='order_total' class="right aligned" style="font-weight: bolder;">
+      <%= @order.display_total.to_html %>
+    </td>
   </tr>
-
   </tbody>
 </table>

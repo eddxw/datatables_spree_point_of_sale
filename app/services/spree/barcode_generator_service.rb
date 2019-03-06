@@ -8,22 +8,22 @@ module Spree
     require 'prawn/measurement_extensions'
 
     def append_barcode_to_pdf_for_variants_of_product(variants)
-      variants.inject(empty_pdf(height: 120)) { |pdf, variant| append_barcode_to_pdf_for_variant(variant, pdf) }
+      variants.inject(empty_pdf(height: 15)) { |pdf, variant| append_barcode_to_pdf_for_variant(variant, pdf) }
     end
 
     def append_barcode_to_pdf_for_variant(variant, pdf = empty_pdf)
-      [ variant.name, variant.options_text, (variant.price.to_s + current_symbol) ].each { |item| pdf.text(item) }
+      [ variant.sku ].each { |item| pdf.text(item, :align => :center) }
 
       barcode = get_barcode(variant)
       pdf.image(StringIO.new(barcode.to_png(xdim: 5)), width: 50.mm, height: 10.mm, margin: 2.mm) if barcode
-      pdf.text(' ')
+      # pdf.text(' ')
       pdf
     end
 
     private
 
       def empty_pdf(layout = {})
-        layout = { width: 54, height: 31, margin: 1 }.merge(layout)
+        layout = { width: 54, height: 20, margin: 1 }.merge(layout)
         pdf = ::Prawn::Document.new( page_size: [ layout[:width].mm , layout[:height].mm ], margin: layout[:margin].mm )
       end
 
