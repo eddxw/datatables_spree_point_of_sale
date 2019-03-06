@@ -1,0 +1,69 @@
+<% item = line_item %>
+<tr id="<%="line_item_#{item.id}"%>">
+  <td width="220">
+    <% if item.variant.images.first  %>
+      <%= image_tag item.variant.images.first.attachment.url(:mini) %>
+    <%elsif item.variant.product.images.first %>
+      <%= image_tag item.variant.product.images.first.attachment.url(:mini) %>
+    <% end %>
+    <br/><%= "#{item.variant.name} #{item.variant.options_text}"%><br/>
+    <%= link_to "(SKU:#{item.variant.sku})", product_url(item.variant.product), target:"_blank" %>
+  </td>
+  <td>
+    <% location_on_hand = item.variant.stock_items.find_by(stock_location_id: @order.pos_shipment.stock_location.id).count_on_hand %>
+    <% total_in_location = location_on_hand + item.quantity %>
+    <% total_any_where_else = item.variant.total_on_hand + item.quantity - total_in_location %>
+    <%= form_with url: update_line_item_quantity_admin_pos_path(@order.number), remote: false do |form| %>
+      <%= form.hidden_field :line_item_id, value: item.id %>
+      <%= form.select("quantity" , options_for_select( (1..total_in_location).to_a , item.quantity), {},onchange: '$(this.form).submit(); this.disabled = true;',class: 'form-control')%>
+    <% end %>
+  </td>
+  <td  align="center"> 
+    <%= "#{total_in_location} (#{total_any_where_else})" %>  
+  </td>
+
+  <td>
+    <% if item.variant.volume_prices.present? %>
+      <% preciosx = item.variant.volume_prices.map{|vp| ["#{number_to_currency(vp.amount)} - #{vp.name} - #{vp.range}", vp.amount]}.to_h  %>
+      <% minx = preciosx.min_by(&:last) %>
+      <% noiva = (minx[1] - minx[1]*0.10).ceil %>
+      <% preciosx["#{number_to_currency(noiva)} - VIP"] = noiva %>
+      <%= form_with url: change_price_admin_pos_path(@order.number) do |form| %>
+        <%= form.hidden_field :line_item_id, value: item.id %>
+        <%= form.select("new_price" , options_for_select( preciosx, item.price), {},onchange: '$(this.form).submit(); this.disabled = true;',class: 'form-control', style: 'width: 75px;')%>
+      <% end %>
+
+    <% else %>
+      <%= form_with url: change_price_admin_pos_path(@order.number) do |form| %>
+        <%= form.hidden_field :line_item_id, value: item.id %>
+        <%= form.select("new_price" , options_for_select([item.price, (item.price-item.price*0.10)] , item.price), {},onchange: '$(this.form).submit(); this.disabled = true;',class: 'form-control', style: 'width: 75px;')%>
+      <% end %>
+    <% end %>
+  </td>
+
+  <td class="price" align="center">
+    <% if item.variant.price != item.price %>
+      <span style="text-decoration: line-through;"><%= "#{number_to_currency(item.variant.price)} " %></span><span style="font-weight: bold;"><%= number_to_currency(item.price) %></span>
+    <% else %>
+      <span style="font-weight: bold;"><%= number_to_currency(item.price) %></span>
+    <% end %>
+  </td>
+  <td align="center"><%= "#{(((item.variant.price - item.price)/item.variant.price)*100).round(1).to_i}%" %></td>
+
+  <td align="center">
+    <%if item.quantity == 1%>
+      <%= link_to remove_admin_pos_path(number: @order.number, item: item.variant.id) do %>
+        <span class='glyphicon glyphicon-remove'></span>
+      <% end %>
+    <%end%>
+  </td>
+  <td class='discount'>
+    <%= form_with url: apply_discount_admin_pos_path(@order.number), style: 'display: flex;' do |form| %>
+      <%= form.hidden_field :line_item_id, value: item.id %>
+      <%= form.text_field "discount", class: 'form-control', style: 'min-width: 57px;' %>
+      <%= button_tag type:"submit", class: 'submit btn btn-primary btn-success btn-sm', data: { disable_with: "..." } do %>
+        <i class="icon icon-refresh" aria-hidden="true"></i>
+      <% end %>
+    <%end%>
+  </td>
+</tr>
