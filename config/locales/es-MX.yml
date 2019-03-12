@@ -39,6 +39,7 @@ es-MX:
       active_store_not_found: Favor de asignar un punto de venta al usuario.
       variant_not_found: Variante no encontrada
       payment_not_found: Selecciona un metodo de pago
-    user:
-      not_found_email: 'No se encontro el usuario %{email}'
-      existing_user: 'Este email ya esta registrado %{email}'
+    point_of_sale:
+      user:
+        not_found_email: 'No se encontro el usuario %{email}'
+        existing_user: 'Este email ya esta registrado %{email}'

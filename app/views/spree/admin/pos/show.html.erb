@@ -17,13 +17,45 @@
   background-color: #88ff88;
 }
 </style>
-<div class='col-sm-12 row'>
-  <h4 class='col-sm-6'>Order No:
-    <%= @order.number %>
-  </h4>
 
-  <h4 class='col-sm-6'>Order For:
-    <%= link_to @order.email, edit_admin_user_path(@order.user) %></h4>
+<h4 class='col-sm-6'>Order No:
+  <%= @order.number %>
+</h4>
+Order For:
+<%= link_to @order.email, edit_admin_user_path(@order.user) %></h4>
+
+<div class="ui five item menu">
+  <a href="/admin/pos/new" onclick="javascript:if (newwindow) newwindow.close()" class="item">
+    <i class="big cart icon"></i>
+    Nueva orden
+  </a>
+  <div class="ui simple dropdown item">
+    Categories
+    <i class="dropdown icon"></i>
+    <div class="menu">
+      <a class="item">Electronics</a>
+      <a class="item">Automotive</a>
+      <a class="item">Home</a>
+    </div>
+  </div>
+  <div class="ui dropdown item">
+    <i class="dropdown icon"></i>
+    Ubicacion
+    <%= select_tag :stock_location_id, 
+        options_from_collection_for_select(user_stock_locations(spree_current_user), :id, :name, @order.pos_shipment.stock_location.id)
+    %>
+  </div>
+  <%= link_to("/admin/invoice/#{@order.number}/receipt", target:  "_blank", id: "linkrecibo", class: 'item') do %>
+    <i class="print big icon"></i>
+    Recibo
+  <% end %>
+  <%= link_to @order.email, edit_admin_user_path(@order.user), class: 'item' %>
+</div>
+
+<div class='col-sm-12 row'>
+
+
+  <h4 class='col-sm-6'>
 
   <div class='col-sm-6'>
     <a href="/admin/pos/new" onclick="javascript:if (newwindow) newwindow.close()" class="button">
@@ -170,7 +202,7 @@
     </div>
 
     <div id="card_name" class="rows">
-      <%= select_tag(:card_name, 
+      <%#= select_tag(:card_name, 
             options_for_select(::CARD_TYPE, 
               "#{@order.payments.first.try(:card_name)}"), 
           include_blank: true,

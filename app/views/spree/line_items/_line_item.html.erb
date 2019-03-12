@@ -2,9 +2,9 @@
 <tr id="<%="line_item_#{item.id}"%>">
   <td width="220">
     <% if item.variant.images.first  %>
-      <%= image_tag item.variant.images.first.attachment.url(:mini) %>
+      <%= mini_image(item.variant) %>
     <%elsif item.variant.product.images.first %>
-      <%= image_tag item.variant.product.images.first.attachment.url(:mini) %>
+      <%= mini_image(item.variant.product) %>
     <% end %>
     <br/><%= "#{item.variant.name} #{item.variant.options_text}"%><br/>
     <%= link_to "(SKU:#{item.variant.sku})", product_url(item.variant.product), target:"_blank" %>

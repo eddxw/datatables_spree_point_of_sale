@@ -182,8 +182,8 @@ class Spree::Admin::PosController < Spree::Admin::BaseController
   end
 
   def ensure_existing_user
-    invalid_user_message = Spree.t('user.not_found_email', email: params[:email]) if params[:email].present? && Spree::User.where(email: params[:email]).blank?
-    invalid_user_message = Spree.t('user.existing_user', email: params[:new_email]) if params[:new_email].present? && Spree::User.where(email: params[:new_email]).present?
+    invalid_user_message = Spree.t('point_of_sale.user.not_found_email', email: params[:email]) if params[:email].present? && Spree::User.where(email: params[:email]).blank?
+    invalid_user_message = Spree.t('point_of_sale.user.existing_user', email: params[:new_email]) if params[:new_email].present? && Spree::User.where(email: params[:new_email]).present?
     redirect_to admin_pos_show_order_path(number: @order.number), flash: { error: invalid_user_message } if invalid_user_message
   end
 
