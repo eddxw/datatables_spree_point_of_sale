@@ -1,0 +1,11 @@
+$(`#<%="line_item_#{@item.id}"%>`).replaceWith("<%= escape_javascript(render @item) %>");
+$(".order-total").html("<%= @order.display_total %>")
+
+$(`#order_tab_summary`).replaceWith("<%= j render 'order_summary' %>");
+
+let elestr = `<%="line_item_#{@item.id}"%>`;
+let crow = document.getElementById(elestr);
+
+crow.classList.add('updated');
+crow.focus();
+crow.classList.remove('updated');

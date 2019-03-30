@@ -1,0 +1,20 @@
+let elestr = `<%="line_item_#{@item.id}"%>`;
+let crow = document.getElementById(elestr);
+
+if (crow) {
+  $(`#${elestr}`).replaceWith("<%= escape_javascript(render @item) %>");
+}
+else {
+  $('#pos-order-table tr:last').after('<%= escape_javascript(render @item) %>');
+}
+
+crow = document.getElementById(elestr);
+
+$(".order-total").html("<%= @order.display_total %>")
+$(`#order_tab_summary`).replaceWith("<%= j render 'order_summary' %>");
+
+crow.classList.add('updated');
+crow.focus();
+crow.classList.remove('updated');
+
+

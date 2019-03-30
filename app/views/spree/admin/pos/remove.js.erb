@@ -1,0 +1,8 @@
+let elestr = `<%="line_item_#{@item.id}"%>`;
+let crow = document.getElementById(elestr);
+
+crow.classList.add('updated');
+crow.focus();
+crow.classList.remove('updated');
+
+$(`#${elestr}`).remove();

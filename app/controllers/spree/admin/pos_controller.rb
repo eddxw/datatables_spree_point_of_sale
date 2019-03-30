@@ -8,7 +8,8 @@ class Spree::Admin::PosController < Spree::Admin::BaseController
   before_action :ensure_existing_user, only: :associate_user
   before_action :check_unpaid_pos_order, only: :new
   before_action :check_discount_request, only: :apply_discount
-  before_action :load_line_item, only: %i[update_line_item_quantity apply_discount]
+  before_action :load_line_item, only: %i[update_line_item_quantity apply_discount change_price change_garantia]
+
   before_action :clean_and_reload_order, only: :update_stock_location
 
   def new
@@ -44,6 +45,9 @@ class Spree::Admin::PosController < Spree::Admin::BaseController
   def remove
     qty = @order.line_items.find_by(variant_id: @variant.id).quantity
     line_item = @order.contents.remove(@variant, qty, @order.pos_shipment)
+    
+    @item = line_item
+
     @order.assign_shipment_for_pos(spree_current_user) if @order.reload.pos_shipment.blank?
     flash.notice = line_item.quantity.zero? ? Spree.t(:product_removed) : Spree.t(:quantity_updated)
     respond_to do |format|
@@ -83,12 +87,24 @@ class Spree::Admin::PosController < Spree::Admin::BaseController
   def change_price
     @item.is_pos = true
     @item.price = params[:new_price]
-    @item.save
+    @item.save!
     @order.update_totals
     @order.save
 
-    flash.notice[:notice] = Spree.t(:price_changed) if @item.errors.blank?
+    #flash.notice[:notice] = Spree.t(:price_changed) if @item.errors.blank?
     flash.now[:error] = @item.errors.full_messages.to_sentence if @item.errors.present?
+
+    respond_to do |format|
+      format.html { redirect_to admin_pos_show_order_path(number: @order.number) }
+      format.js {}
+    end
+  end
+
+  def change_garantia
+    @item.garantia = params[:new_garantia]
+    @item.save!
+    @order.save
+    flash[:error] = @item.errors.full_messages.to_sentence if @item.errors.present?
 
     respond_to do |format|
       format.html { redirect_to admin_pos_show_order_path(number: @order.number) }
@@ -192,7 +208,7 @@ class Spree::Admin::PosController < Spree::Admin::BaseController
   end
 
   def ensure_active_store
-    redirect_to root_path, flash: { error: Spree.t('pos_order.active_store_not_found') } if Spree::StockLocation.stores.active.blank?
+    redirect_to root_path, flash: { error: Spree.t('pos_order.active_store_not_found') } if user_stock_locations(spree_current_user).blank?
   end
 
   def load_order

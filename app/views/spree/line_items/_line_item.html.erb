@@ -1,15 +1,12 @@
 <% item = line_item %>
 <tr id="<%="line_item_#{item.id}"%>">
-  <td width="220">
-    <% if item.variant.images.first  %>
-      <%= mini_image(item.variant) %>
-    <%elsif item.variant.product.images.first %>
-      <%= mini_image(item.variant.product) %>
-    <% end %>
+  <td class="center aligned">
+    <%= mini_image(item.variant) %>
+    
     <br/><%= "#{item.variant.name} #{item.variant.options_text}"%><br/>
     <%= link_to "(SKU:#{item.variant.sku})", product_url(item.variant.product), target:"_blank" %>
   </td>
-  <td>
+  <td class="center aligned">
     <% location_on_hand = item.variant.stock_items.find_by(stock_location_id: @order.pos_shipment.stock_location.id).count_on_hand %>
     <% total_in_location = location_on_hand + item.quantity %>
     <% total_any_where_else = item.variant.total_on_hand + item.quantity - total_in_location %>
@@ -18,11 +15,11 @@
       <%= form.select("quantity" , options_for_select( (1..total_in_location).to_a , item.quantity), {},onchange: '$(this.form).submit(); this.disabled = true;',class: 'form-control')%>
     <% end %>
   </td>
-  <td  align="center"> 
+  <td class="center aligned"> 
     <%= "#{total_in_location} (#{total_any_where_else})" %>  
   </td>
 
-  <td>
+  <td class="center aligned">
     <% if item.variant.volume_prices.present? %>
       <% preciosx = item.variant.volume_prices.map{|vp| ["#{number_to_currency(vp.amount)} - #{vp.name} - #{vp.range}", vp.amount]}.to_h  %>
       <% minx = preciosx.min_by(&:last) %>
@@ -41,29 +38,30 @@
     <% end %>
   </td>
 
-  <td class="price" align="center">
+  <td class="center aligned price">
     <% if item.variant.price != item.price %>
       <span style="text-decoration: line-through;"><%= "#{number_to_currency(item.variant.price)} " %></span><span style="font-weight: bold;"><%= number_to_currency(item.price) %></span>
     <% else %>
       <span style="font-weight: bold;"><%= number_to_currency(item.price) %></span>
     <% end %>
   </td>
-  <td align="center"><%= "#{(((item.variant.price - item.price)/item.variant.price)*100).round(1).to_i}%" %></td>
+  <td class="center aligned"><%= "#{(((item.variant.price - item.price)/item.variant.price)*100).round(1).to_i}%" %></td>
 
-  <td align="center">
-    <%if item.quantity == 1%>
-      <%= link_to remove_admin_pos_path(number: @order.number, item: item.variant.id) do %>
-        <span class='glyphicon glyphicon-remove'></span>
-      <% end %>
-    <%end%>
+  <td class="center aligned">
+    <%= link_to remove_admin_pos_path(number: @order.number, item: item.variant.id), class: 'ui icon red basic button', remote: true do %>
+      <i class='close red icon'></i>
+    <% end %>
   </td>
-  <td class='discount'>
-    <%= form_with url: apply_discount_admin_pos_path(@order.number), style: 'display: flex;' do |form| %>
-      <%= form.hidden_field :line_item_id, value: item.id %>
-      <%= form.text_field "discount", class: 'form-control', style: 'min-width: 57px;' %>
-      <%= button_tag type:"submit", class: 'submit btn btn-primary btn-success btn-sm', data: { disable_with: "..." } do %>
-        <i class="icon icon-refresh" aria-hidden="true"></i>
-      <% end %>
-    <%end%>
+  <td class="center aligned">
+   <div class="ui form">
+      <div class="field">
+          <div class="ui fluid action input">
+            <input type="number" min=0 max=100 placehold="Name">
+            <div class="ui blue button">
+              <i class="sync icon"></i>
+            </div>
+          </div>      
+      </div>  
+  </div>
   </td>
 </tr>
